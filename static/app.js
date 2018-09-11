@@ -1,4 +1,6 @@
-socket = io.connect('http://' + document.domain + ':' + location.port);
+var socket = io.connect('http://' + document.domain + ':' + location.port + '/temperature');
+
+var dt;
 
 socket.on('connect', function () {
     socket.emit('client_connected', {
@@ -6,28 +8,12 @@ socket.on('connect', function () {
     });
 });
 
-socket.on('json', function (jsn) {
-    console.log("And yet it runs!");
-    console.log(jsn);
-    dt=jsn;
+//receive details from server
+socket.on('newnumber', function (msg) {
+    console.log("Received number" + msg.number);
+    //maintain a list of ten numbers
+    dt = msg.number;
 });
-
-var dt;
-socket.on('alert', function (data) {
-    // alert('Alert Message!! ' + data);
-    console.log(data);
-    dt = data;
-});
-
-function json_button() {
-    socket.emit('json');
-}
-
-function alert_button() {
-    setInterval(function () {
-        socket.emit('alert_button', 'A very bad message!')
-    }, 5000)
-}
 
 var dps = []
 dps.shift()
@@ -36,12 +22,6 @@ dps.shift()
 // ###################################################################
 
 window.onload = function () {
-
-    socket.emit('json');
-
-    setInterval(function () {
-        socket.emit('alert_button', 'A very bad message!')
-    }, 5000);
 
     var dps = []; // dataPoints
     var lbls = []; // labelsArray
@@ -70,13 +50,13 @@ window.onload = function () {
                     ticks: {
                         display: false //this will remove only the label
                     },
-                    gridLines : {
-                        display : false
+                    gridLines: {
+                        display: false
                     }
                 }],
-                yAxes:[{
-                    display:true,
-                    ticks:{
+                yAxes: [{
+                    display: true,
+                    ticks: {
                         padding: 5
                     }
                 }]

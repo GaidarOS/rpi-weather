@@ -1,23 +1,44 @@
 # -*- coding: utf-8 -*-
-from random import randrange, uniform
-from flask import Flask, render_template
+# Start with a basic flask app webpage.
+from random import random, randrange, uniform
+from flask import Flask, render_template, url_for, copy_current_request_context
 from flask_socketio import SocketIO, emit
 from time import sleep
+from threading import Thread, Event
 # from RPi import read_temp
+
+
+__author__ = 'VK'
+
+#random number Generator Thread
+thread = Thread()
+thread_stop_event = Event()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
-def sensor_read():
-    with open("hello.txt", "w") as f:
-        data = randrange(10, 25) * uniform(0.8, 1)
-        f.write(str(data))
 
-    with open("hello.txt", "r") as f:
-        data = f.read()
+class RandomThread(Thread):
+    def __init__(self, delay=1):
+        self.delay = delay
+        super(RandomThread, self).__init__()
 
-    return data
+    def randomNumberGenerator(self):
+        """
+        Generate a random number every 1 second and emit to a socketio instance (broadcast)
+        Ideally to be run in a separate thread?
+        """
+        #infinite loop of magical random numbers
+        print("Making random numbers")
+        while not thread_stop_event.isSet():
+            number = round(randrange(10, 25) * uniform(0.8, 1), 3)
+            # print(number)
+            socketio.emit('newnumber', {'number': number}, namespace='/temperature')
+            sleep(self.delay)
+
+    def run(self):
+        self.randomNumberGenerator()
 
 
 @app.route('/')
@@ -25,28 +46,21 @@ def index():
     return render_template('index.html')
 
 
-@socketio.on('client_connected')
-def handle_client_connect_event(json):
-    print('received json: {0}'.format(str(json)))
+@socketio.on('connect', namespace='/temperature')
+def test_connect():
+    # need visibility of the global thread object
+    global thread
+    print('Client connected')
 
+    #Start the random number generator thread only if the thread has not been started before.
+    if not thread.isAlive():
+        print("Starting Thread")
+        thread = RandomThread(delay=3)
+        thread.start()
 
-@socketio.on('json')
-def handle_json_button():
-    # it will forward the json to all clients.
-    # print("This it the json message: ", json)
-    # sleep(2)
-    emit('json', sensor_read())
-    # Comment line above and uncomment the ones below to send the values from the temp sensor
-    # c,f = read_temp()
-    # emit('json', c)
-
-
-# @socketio.on('alert_button')
-# def handle_alert_event(json):
-#     # it will forward the json to all clients.
-#     print('Message from client was {0}'.format(json))
-#     emit('alert', sensor_read())
-
+@socketio.on('disconnect', namespace='/temperature')
+def test_disconnect():
+    print('Client disconnected')
 
 if __name__ == '__main__':
     # socketio.run(app, host="0.0.0.0", port=27346, debug=True)
