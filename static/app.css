@@ -1,9 +1,10 @@
 body{
-    margin:10px;
+    margin:0 10% 0 10%;
     padding: 0;
     height: 100vh;
     display: grid;
-    grid-template-rows: 50px 4fr 1fr;
+    grid-template-rows: 60px 4fr 1fr;
+    grid-template-columns: 2px 1fr 2px;
     /* grid-template-areas: "header"
                          "cntnt"
                          "footer"; */
@@ -12,6 +13,7 @@ body{
 .head{
     /* grid-area: header; */
     grid-row-start: 1;
+    grid-column-start: 2;
     text-align: center;
 
 }
@@ -19,10 +21,12 @@ body{
 .content{
     /* grid-area: cntnt; */
     grid-row-start: 2;
+    grid-column-start: 2;
     
 }
 
 .footer{
     /* grid-area: footer; */
     grid-row-start: 3;
+    grid-column-start: 2;
 }
